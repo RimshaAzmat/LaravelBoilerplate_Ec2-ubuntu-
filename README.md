@@ -1,48 +1,186 @@
-## Laravel Boilerplate (Current: Laravel 8.*) ([Demo](https://demo.laravel-boilerplate.com))
+# Laravel Boilerplate
 
-[![Latest Stable Version](https://poser.pugx.org/rappasoft/laravel-boilerplate/v/stable)](https://packagist.org/packages/rappasoft/laravel-boilerplate)
-[![Latest Unstable Version](https://poser.pugx.org/rappasoft/laravel-boilerplate/v/unstable)](https://packagist.org/packages/rappasoft/laravel-boilerplate) 
-<br/>
-[![StyleCI](https://styleci.io/repos/30171828/shield?style=plastic)](https://github.styleci.io/repos/30171828)
-![Tests](https://github.com/rappasoft/laravel-boilerplate/workflows/Tests/badge.svg?branch=master)
-<br/>
-![GitHub contributors](https://img.shields.io/github/contributors/rappasoft/laravel-boilerplate.svg)
-![GitHub stars](https://img.shields.io/github/stars/rappasoft/laravel-boilerplate.svg?style=social)
+A boilerplate for deploying Laravel applications on an AWS EC2 instance. This project provides a template to quickly set up and deploy a Laravel application with necessary configurations and tools.
 
-### Enjoying this project? [Buy me a beer 🍺](https://www.buymeacoffee.com/rappasoft)
+## Table of Contents
 
-### Demo Credentials
+- [Overview](#overview)
+- [Prerequisites](#prerequisites)
+- [Setup Instructions](#setup-instructions)
+- [Usage](#usage)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
-**Admin:** admin@admin.com  
-**Password:** secret
+## Overview
 
-**User:** user@user.com  
-**Password:** secret
+This repository contains a Laravel application boilerplate configured for deployment on an AWS EC2 instance. It includes configurations for Apache, environment settings, and necessary npm and composer dependencies.
 
-### Official Documentation
+## Prerequisites
 
-[Click here for the official documentation](http://laravel-boilerplate.com)
+Before you begin, ensure you have met the following requirements:
 
-### Slack Channel
+- AWS EC2 instance running Ubuntu.
+- Basic knowledge of Linux command line.
+- Apache, PHP, Composer, and Node.js installed on your server.
 
-Please join us in our Slack channel to get faster responses to your questions. Get your invite here: https://laravel-5-boilerplate.herokuapp.com
+## Setup Instructions
 
-### Introduction
+Follow these steps to set up the Laravel application on your EC2 instance:
 
-Laravel Boilerplate provides you with a massive head start on any size web application. Out of the box it has features like a backend built on CoreUI with Spatie/Permission authorization. It has a frontend scaffold built on Bootstrap 4. Other features such as Two Factor Authentication, User/Role management, searchable/sortable tables built on my [Laravel Livewire tables plugin](https://github.com/rappasoft/laravel-livewire-tables), user impersonation, timezone support, multi-lingual support with 20+ built in languages, demo mode, and much more.
+1. **Update and Upgrade Your System**
 
-### Issues
+    ```bash
+    sudo apt update
+    sudo apt upgrade -y
+    ```
 
-If you come across any issues please [report them here](https://github.com/rappasoft/laravel-boilerplate/issues).
+2. **Install Necessary Packages**
 
-### Contributing
+    ```bash
+    sudo apt install apache2 php libapache2-mod-php php-mysql unzip curl git -y
+    sudo apt install php-cli php-mbstring php-xml php-bcmath php-json php-curl -y
+    ```
 
-Thank you for considering contributing to the Laravel Boilerplate project! Please feel free to make any pull requests, or e-mail me a feature request you would like to see in the future to Anthony Rappa at rappa819@gmail.com.
+3. **Install Composer**
 
-### Security Vulnerabilities
+    ```bash
+    curl -sS https://getcomposer.org/installer | php
+    sudo mv composer.phar /usr/local/bin/composer
+    ```
 
-If you discover a security vulnerability within this boilerplate, please send an e-mail to Anthony Rappa at rappa819@gmail.com, or create a pull request if possible. All security vulnerabilities will be promptly addressed.
+4. **Clone the Laravel Project**
 
-### License
+    ```bash
+    cd /var/www
+    sudo git clone https://github.com/your-repo/laravel-boilerplate.git
+    cd laravel-boilerplate
+    ```
 
-MIT: [http://anthony.mit-license.org](http://anthony.mit-license.org)
+5. **Install Project Dependencies**
+
+    ```bash
+    sudo npm install
+    sudo composer install
+    ```
+
+6. **Set Up Environment File**
+
+    ```bash
+    sudo cp .env.example .env
+    ```
+
+7. **Generate Application Key**
+
+    ```bash
+    sudo php artisan key:generate
+    ```
+
+8. **Set Proper Permissions**
+
+    ```bash
+    sudo chown -R www-data:www-data /var/www/laravel-boilerplate
+    sudo chmod -R 775 /var/www/laravel-boilerplate/storage /var/www/laravel-boilerplate/bootstrap/cache
+    ```
+
+9. **Configure Apache**
+
+    - Create Virtual Host Configuration
+
+      ```bash
+      sudo nano /etc/apache2/sites-available/laravel-boilerplate.conf
+      ```
+
+      Add the following content:
+
+      ```apache
+      <VirtualHost *:80>
+          ServerAdmin webmaster@localhost
+          DocumentRoot /var/www/laravel-boilerplate/public
+          ErrorLog ${APACHE_LOG_DIR}/error.log
+          CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+          <Directory /var/www/laravel-boilerplate/public>
+              AllowOverride All
+          </Directory>
+      </VirtualHost>
+      ```
+
+    - Enable the New Site and Rewrite Module
+
+      ```bash
+      sudo a2dissite 000-default.conf
+      sudo a2ensite laravel-boilerplate.conf
+      sudo a2enmod rewrite
+      sudo systemctl reload apache2
+      ```
+
+10. **Create and Enable Swap Space (if necessary)**
+
+    ```bash
+    sudo fallocate -l 1G /swapfile
+    sudo chmod 600 /swapfile
+    sudo mkswap /swapfile
+    sudo swapon /swapfile
+    sudo swapon --show
+    ```
+
+## Usage
+
+After setting up, you can manage your Laravel application using the following commands:
+
+- **Start Development Server**
+
+    ```bash
+    sudo npm run dev
+    ```
+
+- **Clear and Cache Configurations**
+
+    ```bash
+    sudo php artisan config:cache
+    sudo php artisan cache:clear
+    ```
+
+## Troubleshooting
+
+**1. Webpack Compilation Errors**
+
+- **Issue:** Errors during `npm run dev`.
+
+- **Solution:** Ensure `laravel-mix` is listed only once in `package.json` and re-run `npm install`.
+
+**2. Apache Configuration Issues**
+
+- **Issue:** Default Apache pages shown instead of Laravel.
+
+- **Solution:** Check Apache virtual host configuration and ensure `DocumentRoot` and directory permissions are set correctly.
+
+**3. File Permission Issues**
+
+- **Issue:** Laravel logs and caching not functioning.
+
+- **Solution:** Adjust file permissions for `storage` and `bootstrap/cache` directories.
+
+**4. PHP Artisan Commands**
+
+- **Issue:** Need to clear and cache configuration.
+
+- **Solution:** Run `php artisan config:cache` and `php artisan cache:clear`.
+
+**5. Adding Swap Space**
+
+- **Issue:** Out of memory errors during `npm install`.
+
+- **Solution:** Add swap space to prevent out-of-memory errors.
+
+![Screenshot 2024-07-25 121648](https://github.com/user-attachments/assets/2bafda3f-0887-460c-b7c7-702bdb836cac)
+
+![Screenshot 2024-07-25 105737](https://github.com/user-attachments/assets/5e3c1aca-2055-4c79-be32-31482968e30f)
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+Feel free to adjust the content as needed to fit your project’s specifics or personal preferences.
